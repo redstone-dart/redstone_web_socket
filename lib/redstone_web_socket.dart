@@ -12,7 +12,20 @@ import "package:di/di.dart";
 import 'package:logging/logging.dart';
 
 /**
+ * An annotation to define a web socket handler.
  *
+ * A web socket handler can be a function or a class. If defined
+ * as a function, it'll be invoked for every new connection established:
+ *
+ *      @WebSocketHandler("/ws")
+ *      onConnection(websocket) {
+ *        websocket.listen((message) {
+ *          websocket.add("echo $message");
+ *        });
+ *      }
+ *
+ * If the handler is a class, it must provide methods annotated
+ * with [OnOpen], [OnMessage], [OnError] or [OnClose].
  *
  */
 class WebSocketHandler {
@@ -26,6 +39,15 @@ class WebSocketHandler {
 }
 
 /**
+ * Methods annotated with [OnOpen] will be invoked when a new web
+ * socket connection is established.
+ *
+ * Usage:
+ *
+ *      @OnOpen()
+ *      void onOpen(WebSocketSession session) {
+ *        ...
+ *      }
  *
  *
  */
@@ -36,7 +58,15 @@ class OnOpen {
 }
 
 /**
+ * Methods annotated with [OnMessage] will be invoked when
+ * a message is received.
  *
+ * Usage:
+ *
+ *      @OnMessage()
+ *      void onMessage(String message, WebSocketSession session) {
+ *        ...
+ *      }
  *
  */
 class OnMessage {
@@ -46,7 +76,15 @@ class OnMessage {
 }
 
 /**
+ * Methods annotated with [OnError] will be invoked when
+ * a error is thrown.
  *
+ * Usage:
+ *
+ *      @OnError()
+ *      void onError(Object error, WebSocketSession session) {
+ *        ...
+ *      }
  *
  */
 class OnError {
@@ -56,7 +94,15 @@ class OnError {
 }
 
 /**
+ * Methods annotated with [OnClose] will be invoked
+ * when a connection is closed.
  *
+ * Usage:
+ *
+ *      @OnClose()
+ *      void onClose(WebSocketSession session) {
+ *        ...
+ *      }
  *
  */
 class OnClose {
@@ -65,14 +111,17 @@ class OnClose {
 
 }
 
-/**
- *
- *
- */
+///A web socket session
 class WebSocketSession {
 
+  ///The [attributes] map can be used to share
+  ///data between web socket events
   final QueryMap attributes = new QueryMap({});
+
+  ///The web socket connection
   final CompatibleWebSocket connection;
+
+  ///The subprotocol associated with this web socket connection
   final String protocol;
 
   WebSocketSession(this.connection, [this.protocol]);
@@ -82,8 +131,13 @@ class WebSocketSession {
 List<_EndPoint> _currentEndPoints = null;
 
 /**
+ * A web socket plugin.
  *
- * 
+ * This plugin will create a web socket endpoint for every
+ * function or class annotated with [WebSocketHandler].
+ *
+ * If [protocols] or [allowedOrigins] are provided, they
+ * will be applied to every web socket handler.
  */
 RedstonePlugin getWebSocketPlugin({Iterable<String> protocols,
                                    Iterable<String> allowedOrigins}) {
@@ -128,7 +182,9 @@ RedstonePlugin getWebSocketPlugin({Iterable<String> protocols,
 }
 
 /**
+ * A simple web socket client which can be used in unit tests.
  *
+ * See also [openMockConnection].
  */
 class MockWebSocket extends Stream implements StreamSink {
 
@@ -166,6 +222,15 @@ class MockWebSocket extends Stream implements StreamSink {
 
 }
 
+/**
+ * Initiate a [mockConnection] to [path].
+ *
+ * Usage:
+ *
+ *     var conn = new MockConnection();
+ *     openMockConnection("/ws", conn);
+ *
+ */
 void openMockConnection(String path, MockWebSocket mockConnection,
                         [String protocol]) {
 
