@@ -1,6 +1,8 @@
 redstone_web_socket
 ===============
 
+[![Build Status](https://drone.io/github.com/luizmineo/redstone_web_socket/status.png)](https://drone.io/github.com/luizmineo/redstone_web_socket/latest)
+
 redstone_web_socket is a web socket plugin for [Redstone.dart](http://redstonedart.org). It uses the 
 [shelf_web_socket](http://pub.dartlang.org/packages/shelf_web_socket) package to create web socket handlers.
 
