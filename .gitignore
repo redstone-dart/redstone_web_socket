@@ -2,6 +2,7 @@
 **/packages
 .project
 .buildlog
+.pub
 .idea
 *.precompiled.js
 *.js_
