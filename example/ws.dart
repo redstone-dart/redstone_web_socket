@@ -1,6 +1,6 @@
 library ws_example;
 
-import 'package:redstone/server.dart' as app;
+import 'package:redstone/redstone.dart';
 import 'package:redstone_web_socket/redstone_web_socket.dart';
 
 @WebSocketHandler("/ws")
@@ -29,7 +29,7 @@ class ServerEndPoint {
 
 }
 
-@app.Route('/', responseType: "text/html; charset=utf-8;")
+@Route('/', responseType: "text/html; charset=utf-8;")
 index() => """<!DOCTYPE html>
 <html>
   <head lang="en">
@@ -51,7 +51,7 @@ index() => """<!DOCTYPE html>
 </html>""";
 
 void main() {
-  app.setupConsoleLog();
-  app.addPlugin(getWebSocketPlugin());
-  app.start();
+  setupConsoleLog();
+  addPlugin(getWebSocketPlugin());
+  start();
 }

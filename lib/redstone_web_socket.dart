@@ -3,8 +3,7 @@ library redstone_web_socket;
 import "dart:async";
 import "dart:mirrors";
 
-import "package:redstone/server.dart";
-import "package:redstone/query_map.dart";
+import "package:redstone/redstone.dart";
 import "package:shelf/shelf.dart" as shelf;
 import "package:shelf_web_socket/shelf_web_socket.dart";
 import 'package:http_parser/http_parser.dart';
@@ -116,7 +115,7 @@ class WebSocketSession {
 
   ///The [attributes] map can be used to share
   ///data between web socket events
-  final QueryMap attributes = new QueryMap({});
+  final DynamicMap attributes = new DynamicMap({});
 
   ///The web socket connection
   final CompatibleWebSocket connection;
@@ -156,10 +155,10 @@ RedstonePlugin getWebSocketPlugin({Iterable<String> protocols,
     _installClasses(manager, endPoints, protocols, allowedOrigins, logger);
 
     //install shelf handler
-    var currentShelfHandler = manager.getShelfHandler();
+    var currentShelfHandler = manager.shelfHandler;
     var shelfHandler = (shelf.Request req) {
 
-      var path = req.url.path;
+      var path = req.requestedUri.path;
       var wsEndPoint = endPoints.firstWhere((e) => _testEndPoint(path, e),
                                             orElse: () => null);
 
@@ -173,7 +172,7 @@ RedstonePlugin getWebSocketPlugin({Iterable<String> protocols,
 
       return new shelf.Response.notFound("not_found");
     };
-    manager.setShelfHandler(shelfHandler);
+    manager.shelfHandler = shelfHandler;
 
     _currentEndPoints = endPoints;
 
@@ -356,7 +355,6 @@ void _installClasses(Manager manager, List<_EndPoint> endPoints,
   classes.forEach((annotatedType) {
 
     ClassMirror clazz = annotatedType.mirror;
-    LibraryMirror lib = clazz.owner;
     WebSocketHandler metadata = annotatedType.metadata;
 
     var objMirror = reflect(injector.get(clazz.reflectedType));
@@ -396,8 +394,8 @@ void _installClasses(Manager manager, List<_EndPoint> endPoints,
     }
 
     var handler = webSocketHandler(onConnection,
-    protocols: endPointProtocols,
-    allowedOrigins: endPointAllowedOrigins);
+      protocols: endPointProtocols,
+      allowedOrigins: endPointAllowedOrigins);
 
     endPoints.add(new _EndPoint(pattern, handler, onConnection, hasProtocol));
 

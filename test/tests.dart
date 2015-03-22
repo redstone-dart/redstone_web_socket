@@ -2,7 +2,7 @@ library web_socket_tests;
 
 import 'dart:async';
 
-import 'package:redstone/server.dart' as app;
+import 'package:redstone/redstone.dart';
 import 'package:redstone_web_socket/redstone_web_socket.dart';
 import 'package:unittest/unittest.dart';
 
@@ -10,11 +10,11 @@ import 'redstone_services.dart';
 
 main() {
 
-  setUp(() {
+  setUp(() async {
 
     wsEvents = [];
-    app.addPlugin(getWebSocketPlugin());
-    app.setUp([#redstone_services]);
+    addPlugin(getWebSocketPlugin());
+    await redstoneSetUp([#redstone_services]);
 
   });
 

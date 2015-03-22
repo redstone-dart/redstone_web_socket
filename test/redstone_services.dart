@@ -1,6 +1,5 @@
 library redstone_services;
 
-import 'package:redstone/server.dart' as app;
 import 'package:redstone_web_socket/redstone_web_socket.dart';
 
 List<String> wsEvents;
