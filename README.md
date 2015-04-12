@@ -1,15 +1,8 @@
-**Unfortunatelly, I won't be able to maintain this project (and any other open-source project) in the foreseeable future. I'm terrible sorry for this, and if you are relying on this code base for your project(s), please, accept my apologies.** 
-
-**Also, if you have the interest, feel free to fork this repository and improve it. (for Redstone, you'll probably want to take a look at the v0.6 branch, which has a nicer code base).**
-
-**For all you guys who have helped me improving this project, my sincere thanks.**
-
-redstone_web_socket
-===============
+# redstone_web_socket
 
 [![Build Status](https://drone.io/github.com/luizmineo/redstone_web_socket/status.png)](https://drone.io/github.com/luizmineo/redstone_web_socket/latest)
 
-redstone_web_socket is a web socket plugin for [Redstone.dart](http://redstonedart.org). It uses the 
+redstone_web_socket is a web socket plugin for [Redstone.dart](http://redstonedart.org). It uses the
 [shelf_web_socket](http://pub.dartlang.org/packages/shelf_web_socket) package to create web socket handlers.
 
 ### Using @WebSocketHandler with functions
@@ -28,7 +21,7 @@ onConnection(websocket) {
 
 ### Using @WebSocketHandler with classes
 
-If a class is annotated with `@WebSocketHandler`, the plugin will install a event listener for every method annotated 
+If a class is annotated with `@WebSocketHandler`, the plugin will install a event listener for every method annotated
 with `@OnOpen`, `@OnMessage`, `@OnError` and `@OnClose`:
 
 ```dart
@@ -74,10 +67,10 @@ import 'package:redstone_web_socket/redstone_web_socket.dart';
 
 void main() {
   app.setupConsoleLog();
-  
+
   //install web socket handlers
   app.addPlugin(getWebSocketPlugin());
-  
+
   app.start();
 }
 ```
@@ -92,25 +85,25 @@ import 'package:redstone_web_socket/redstone_web_socket.dart';
 import 'package:unittest/unittest.dart';
 
 main() {
-  
+
   test("Test echo service", () {
-  
+
     var completer = new Completer();
     var socket = new MockWebSocket();
-    
+
     socket.listen((message) {
-      
+
       expect(message, equals("echo message"));
-      
+
       completer.complete();
     });
-    
+
     openMockConnection("/ws", socket);
-    
+
     socket.add("message");
-    
+
     return completer.future;
-  
+
   });
 
 }
