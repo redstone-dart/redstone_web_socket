@@ -1,6 +1,6 @@
-# redstone_web_socket
+# Redstone WebSocket
 
-[![Build Status](https://drone.io/github.com/luizmineo/redstone_web_socket/status.png)](https://drone.io/github.com/luizmineo/redstone_web_socket/latest)
+[![Build Status](https://travis-ci.org/redstone-dart/redstone_web_socket.svg)](https://travis-ci.org/redstone-dart/redstone_web_socket)
 
 redstone_web_socket is a web socket plugin for [Redstone.dart](http://redstonedart.org). It uses the
 [shelf_web_socket](http://pub.dartlang.org/packages/shelf_web_socket) package to create web socket handlers.
@@ -51,7 +51,6 @@ class ServerEndPoint {
   }
 
 }
-
 ```
 
 Like redstone [groups](http://redstonedart.org/doc/Groups.html), the class will be instantiated only once, and it
@@ -75,7 +74,7 @@ void main() {
 }
 ```
 
-### Unit tests
+### Unit Tests
 
 This package also provides a simple mock client, which can be used in unit tests:
 
