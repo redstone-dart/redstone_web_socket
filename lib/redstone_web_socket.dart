@@ -3,12 +3,12 @@ library redstone_web_socket;
 import "dart:async";
 import "dart:mirrors";
 
+import "package:di/di.dart";
+import 'package:logging/logging.dart';
 import "package:redstone/redstone.dart";
 import "package:shelf/shelf.dart" as shelf;
 import "package:shelf_web_socket/shelf_web_socket.dart";
-import 'package:http_parser/http_parser.dart';
-import "package:di/di.dart";
-import 'package:logging/logging.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 /**
  * An annotation to define a web socket handler.
@@ -17,9 +17,9 @@ import 'package:logging/logging.dart';
  * as a function, it'll be invoked for every new connection established:
  *
  *      @WebSocketHandler("/ws")
- *      onConnection(websocket) {
- *        websocket.listen((message) {
- *          websocket.add("echo $message");
+ *      onConnection(channel) {
+ *        channel.stream.listen((message) {
+ *          channel.sink.add("echo $message");
  *        });
  *      }
  *
@@ -28,13 +28,11 @@ import 'package:logging/logging.dart';
  *
  */
 class WebSocketHandler {
-
   final String urlPattern;
   final List<String> protocols;
   final List<String> allowedOrigins;
 
   const WebSocketHandler(this.urlPattern, {this.protocols, this.allowedOrigins});
-
 }
 
 /**
@@ -51,9 +49,7 @@ class WebSocketHandler {
  *
  */
 class OnOpen {
-
   const OnOpen();
-
 }
 
 /**
@@ -69,9 +65,7 @@ class OnOpen {
  *
  */
 class OnMessage {
-
   const OnMessage();
-
 }
 
 /**
@@ -87,9 +81,7 @@ class OnMessage {
  *
  */
 class OnError {
-
   const OnError();
-
 }
 
 /**
@@ -105,26 +97,22 @@ class OnError {
  *
  */
 class OnClose {
-
   const OnClose();
-
 }
 
 ///A web socket session
 class WebSocketSession {
-
   ///The [attributes] map can be used to share
   ///data between web socket events
   final DynamicMap attributes = new DynamicMap({});
 
   ///The web socket connection
-  final CompatibleWebSocket connection;
+  final WebSocketChannel connection;
 
   ///The subprotocol associated with this web socket connection
   final String protocol;
 
   WebSocketSession(this.connection, [this.protocol]);
-
 }
 
 List<_EndPoint> _currentEndPoints = null;
@@ -138,11 +126,8 @@ List<_EndPoint> _currentEndPoints = null;
  * If [protocols] or [allowedOrigins] are provided, they
  * will be applied to every web socket handler.
  */
-RedstonePlugin getWebSocketPlugin({Iterable<String> protocols,
-                                   Iterable<String> allowedOrigins}) {
-
+RedstonePlugin getWebSocketPlugin({Iterable<String> protocols, Iterable<String> allowedOrigins}) {
   return (Manager manager) {
-
     var logger = new Logger("redstone_web_socket");
 
     _currentEndPoints = null;
@@ -157,10 +142,8 @@ RedstonePlugin getWebSocketPlugin({Iterable<String> protocols,
     //install shelf handler
     var currentShelfHandler = manager.shelfHandler;
     var shelfHandler = (shelf.Request req) {
-
       var path = req.requestedUri.path;
-      var wsEndPoint = endPoints.firstWhere((e) => _testEndPoint(path, e),
-                                            orElse: () => null);
+      var wsEndPoint = endPoints.firstWhere((e) => _testEndPoint(path, e), orElse: () => null);
 
       if (wsEndPoint != null) {
         return wsEndPoint.handler(req);
@@ -175,9 +158,7 @@ RedstonePlugin getWebSocketPlugin({Iterable<String> protocols,
     manager.shelfHandler = shelfHandler;
 
     _currentEndPoints = endPoints;
-
   };
-  
 }
 
 /**
@@ -186,26 +167,21 @@ RedstonePlugin getWebSocketPlugin({Iterable<String> protocols,
  * See also [openMockConnection].
  */
 class MockWebSocket extends Stream implements StreamSink {
-
   final _MockServerWebSocket _server = new _MockServerWebSocket();
 
   int get closeCode => _server.closeCode;
   String get closeReason => _server.closeReason;
 
   @override
-  StreamSubscription listen(void onData(event),
-                            {Function onError, void onDone(),
-                            bool cancelOnError}) {
-    return _server._out.stream.listen(onData, onError: onError,
-    onDone: onDone, cancelOnError: cancelOnError);
+  StreamSubscription listen(void onData(event), {Function onError, void onDone(), bool cancelOnError}) {
+    return _server._out.stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
   @override
   void add(event) => _server._in.add(event);
 
   @override
-  void addError(errorEvent, [StackTrace stackTrace]) =>
-  _server._in.addError(errorEvent, stackTrace);
+  void addError(errorEvent, [StackTrace stackTrace]) => _server._in.addError(errorEvent, stackTrace);
 
   Future close([int closeCode = 1005, String closeReason]) {
     _server.closeCode = closeCode;
@@ -218,7 +194,6 @@ class MockWebSocket extends Stream implements StreamSink {
 
   @override
   Future get done => _server._in.done;
-
 }
 
 /**
@@ -230,11 +205,8 @@ class MockWebSocket extends Stream implements StreamSink {
  *     openMockConnection("/ws", conn);
  *
  */
-void openMockConnection(String path, MockWebSocket mockConnection,
-                        [String protocol]) {
-
-  var wsEndPoint = _currentEndPoints.firstWhere((e) => _testEndPoint(path, e),
-      orElse: () => null);
+void openMockConnection(String path, MockWebSocket mockConnection, [String protocol]) {
+  var wsEndPoint = _currentEndPoints.firstWhere((e) => _testEndPoint(path, e), orElse: () => null);
 
   if (wsEndPoint == null) {
     throw "no endpoint found for $path.";
@@ -247,105 +219,76 @@ void openMockConnection(String path, MockWebSocket mockConnection,
   }
 }
 
-
-
 class _EndPoint {
-
   final RegExp urlPattern;
   final Function handler;
   final Function onConnection;
   final bool hasProtocol;
 
-  _EndPoint(this.urlPattern, this.handler,
-            this.onConnection, this.hasProtocol);
-
+  _EndPoint(this.urlPattern, this.handler, this.onConnection, this.hasProtocol);
 }
 
-class _MockServerWebSocket extends Stream implements CompatibleWebSocket {
-
+class _MockServerWebSocket implements WebSocketChannel {
   final StreamController _in = new StreamController();
   final StreamController _out = new StreamController();
 
-  int closeCode;
-  String closeReason;
-  Duration pingInterval;
+  int _closeCode;
+  String _closeReason;
+  String _protocol;
+  set closeCode(int value) => _closeCode = value;
+  set closeReason(String value) => _closeReason = value;
+  set protocol(String value) => _protocol = value;
 
   @override
-  StreamSubscription listen(void onData(event),
-                            {Function onError, void onDone(),
-                            bool cancelOnError}) {
-    return _in.stream.listen(onData, onError: onError,
-    onDone: onDone, cancelOnError: cancelOnError);
-  }
+  Stream get stream => _in.stream;
 
   @override
-  void add(event) => _out.add(event);
+  WebSocketSink get sink => _out;
 
   @override
-  void addError(errorEvent, [StackTrace stackTrace]) =>
-    _out.addError(errorEvent, stackTrace);
+  String get protocol => _protocol;
 
   @override
-  Future close([int closeCode = 1005, String closeReason]) {
-    this.closeCode = closeCode;
-    this.closeReason = closeReason;
-    return _out.close();
-  }
+  String get closeReason => _closeReason;
 
   @override
-  Future addStream(Stream stream) => _out.addStream(stream);
-
-  @override
-  Future get done => _out.done;
-
+  int get closeCode => _closeCode;
 }
 
-void _installFunctions(Manager manager, List<_EndPoint> endPoints,
-                       List<String> protocols, List<String> allowedOrigins,
-                       Logger logger) {
-
+void _installFunctions(
+    Manager manager, List<_EndPoint> endPoints, List<String> protocols, List<String> allowedOrigins, Logger logger) {
   var functions = manager.findFunctions(WebSocketHandler);
 
   functions.forEach((annotateType) {
-
     MethodMirror method = annotateType.mirror;
     LibraryMirror lib = method.owner;
     WebSocketHandler metadata = annotateType.metadata;
 
     var pattern = new RegExp(metadata.urlPattern);
-    var endPointProtocols = metadata.protocols != null ?
-    metadata.protocols : protocols;
-    var endPointAllowedOrigins = metadata.allowedOrigins != null ?
-    metadata.allowedOrigins : allowedOrigins;
+    var endPointProtocols = metadata.protocols != null ? metadata.protocols : protocols;
+    var endPointAllowedOrigins = metadata.allowedOrigins != null ? metadata.allowedOrigins : allowedOrigins;
 
     var onConnection;
     var hasProtocol = false;
 
     if (method.parameters.length == 1) {
-      onConnection = (websocket) =>
-      lib.invoke(method.simpleName, [websocket]);
+      onConnection = (websocket) => lib.invoke(method.simpleName, [websocket]);
     } else {
       hasProtocol = true;
-      onConnection = (websocket, protocol) =>
-      lib.invoke(method.simpleName, [websocket, protocol]);
+      onConnection = (websocket, protocol) => lib.invoke(method.simpleName, [websocket, protocol]);
     }
 
-    var handler = webSocketHandler(onConnection,
-    protocols: endPointProtocols,
-    allowedOrigins: endPointAllowedOrigins);
+    var handler = webSocketHandler(onConnection, protocols: endPointProtocols, allowedOrigins: endPointAllowedOrigins);
 
     endPoints.add(new _EndPoint(pattern, handler, onConnection, hasProtocol));
 
     var handlerName = MirrorSystem.getName(method.qualifiedName);
     logger.info("configured websocket handler for ${metadata.urlPattern}: $handlerName");
   });
-
 }
 
-void _installClasses(Manager manager, List<_EndPoint> endPoints,
-                     List<String> protocols, List<String> allowedOrigins,
-                     Logger logger) {
-
+void _installClasses(
+    Manager manager, List<_EndPoint> endPoints, List<String> protocols, List<String> allowedOrigins, Logger logger) {
   var classes = manager.findClasses(WebSocketHandler);
 
   var module = new Module();
@@ -353,7 +296,6 @@ void _installClasses(Manager manager, List<_EndPoint> endPoints,
   var injector = manager.createInjector([module]);
 
   classes.forEach((annotatedType) {
-
     ClassMirror clazz = annotatedType.mirror;
     WebSocketHandler metadata = annotatedType.metadata;
 
@@ -365,25 +307,21 @@ void _installClasses(Manager manager, List<_EndPoint> endPoints,
     var onClose = _getHandler(manager, clazz, OnClose);
 
     var pattern = new RegExp(metadata.urlPattern);
-    var endPointProtocols = metadata.protocols != null ?
-    metadata.protocols : protocols;
-    var endPointAllowedOrigins = metadata.allowedOrigins != null ?
-    metadata.allowedOrigins : allowedOrigins;
+    var endPointProtocols = metadata.protocols != null ? metadata.protocols : protocols;
+    var endPointAllowedOrigins = metadata.allowedOrigins != null ? metadata.allowedOrigins : allowedOrigins;
 
-    var onConnection = (CompatibleWebSocket websocket, String protocol) {
-
+    var onConnection = (WebSocketChannel websocket, String protocol) {
       var session = new WebSocketSession(websocket, protocol);
 
       _invokeHandler(objMirror, onOpen, [session]);
 
-      websocket.listen((event) {
+      websocket.stream.listen((event) {
         _invokeHandler(objMirror, onMessage, [event, session]);
       }, onError: (error) {
         _invokeHandler(objMirror, onError, [error, session]);
       }, onDone: () {
         _invokeHandler(objMirror, onClose, [session]);
       });
-
     };
 
     var hasProtocol = true;
@@ -393,16 +331,13 @@ void _installClasses(Manager manager, List<_EndPoint> endPoints,
       onConnection = (websocket) => f(websocket, null);
     }
 
-    var handler = webSocketHandler(onConnection,
-      protocols: endPointProtocols,
-      allowedOrigins: endPointAllowedOrigins);
+    var handler = webSocketHandler(onConnection, protocols: endPointProtocols, allowedOrigins: endPointAllowedOrigins);
 
     endPoints.add(new _EndPoint(pattern, handler, onConnection, hasProtocol));
 
     var handlerName = MirrorSystem.getName(clazz.qualifiedName);
     logger.info("configured websocket handler for ${metadata.urlPattern}: $handlerName");
   });
-
 }
 
 bool _testEndPoint(String requestedUrl, _EndPoint endPoint) {
@@ -413,8 +348,7 @@ bool _testEndPoint(String requestedUrl, _EndPoint endPoint) {
   return false;
 }
 
-MethodMirror _getHandler(Manager manager, ClassMirror clazz,
-                                        Type annotation) {
+MethodMirror _getHandler(Manager manager, ClassMirror clazz, Type annotation) {
   var methods = manager.findMethods(clazz, annotation);
   if (methods.isEmpty) {
     return null;
@@ -422,9 +356,7 @@ MethodMirror _getHandler(Manager manager, ClassMirror clazz,
   return methods.first.mirror;
 }
 
-void _invokeHandler(InstanceMirror objMirror,
-                    MethodMirror handler,
-                    List arguments) {
+void _invokeHandler(InstanceMirror objMirror, MethodMirror handler, List arguments) {
   if (handler == null) {
     return;
   }
@@ -435,5 +367,4 @@ void _invokeHandler(InstanceMirror objMirror,
   }
 
   objMirror.invoke(handler.simpleName, arguments);
-
 }

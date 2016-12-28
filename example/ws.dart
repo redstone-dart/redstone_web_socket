@@ -14,7 +14,7 @@ class ServerEndPoint {
   @OnMessage()
   void onMessage(String message, WebSocketSession session) {
     print("message received: $message");
-    session.connection.add("pong");
+    session.connection.sink.add("pong");
   }
 
   @OnError()
