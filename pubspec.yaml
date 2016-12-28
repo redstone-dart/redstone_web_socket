@@ -1,5 +1,5 @@
 name: redstone_web_socket
-version: 0.1.0-beta.1
+version: 0.1.0
 description: A web socket plugin for Redstone.dart
 author: Luiz Mineo <luiz.mineo@gmail.com>
 homepage: http://redstonedart.org
