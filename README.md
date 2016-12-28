@@ -7,14 +7,14 @@ redstone_web_socket is a web socket plugin for [Redstone.dart](http://redstoneda
 
 ### Using @WebSocketHandler with functions
 
-If a function is annotated with `@WebSocketHandler`, it'll be invoked with a [CompatibleWebSocket](https://api.dartlang.org/apidocs/channels/be/dartdoc-viewer/http_parser/http_parser.CompatibleWebSocket) object for
+If a function is annotated with `@WebSocketHandler`, it'll be invoked with a [WebSocketChannel](https://pub.dartlang.org/packages/web_socket_channel) object for
 every new established connection:
 
 ```dart
 @WebSocketHandler("/ws")
-onConnection(websocket) {
-  websocket.listen((message) {
-    websocket.add("echo $message");
+onConnection(WebSocketChannel channel) {
+  channel.stream.listen((message) {
+    channel.sink.add("echo $message");
   });
 }
 ```
